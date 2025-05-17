@@ -13,21 +13,6 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-
-    # Install required tools for unzipping, Python, and JSON processing
-    - name: Install Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y unzip jq python3
-    
-      # Set build variables from the JSON config using Python.
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.13
-
-    - name: Set Build Variables
-      run: python3 .github/export_vars.py
     
     - name: Restore caches
       uses: actions/cache@v4
