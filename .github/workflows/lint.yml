@@ -2,10 +2,7 @@ name: GDScript Autofix & Lint
 
 on:
   push:
-    branches: [ main ]
   pull_request:
-    branches: [ main ]
-  workflow_dispatch:
 
 jobs:
   format-and-fix:
@@ -13,6 +10,10 @@ jobs:
     steps:
       # 1. Get the code
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
 
       # 2. Set up Python 3.x
       - name: Set up Python
@@ -42,6 +43,7 @@ jobs:
         if: ${{ steps.gdlint.outcome != cancelled() }}
         uses: peter-evans/create-pull-request@v7
         with:
+          base: ${{ github.event.pull_request.head.ref || github.ref_name }}
           # branch name prefix; the action will append a timestamp/hash
           branch: gdscript-auto-format
           # commit message and PR title
