@@ -1,0 +1,63 @@
+name: Build Windows Export
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Restore caches
+      uses: actions/cache@v4
+      with:
+        path: .godot/
+        key: game-jam-autobuild-caches-godot-${{ github.repository }}
+    
+    - name: Install Wine for Windows EXE logo
+      id: wine_install
+      run: |
+        sudo apt install wine64
+        echo "WINE_PATH=$(which wine64)" >> $GITHUB_OUTPUT
+
+    - name: Export Godot project
+      id: export-normal
+      uses: firebelley/godot-export@v6.0.0
+      with:
+        godot_executable_download_url: https://github.com/godotengine/godot/releases/download/4.4-stable/Godot_v4.4-stable_linux.x86_64.zip
+        godot_export_templates_download_url: https://github.com/godotengine/godot/releases/download/4.4-stable/Godot_v4.4-stable_export_templates.tpz
+        cache: true
+        relative_export_path: "./dist/normal"
+        relative_project_path: "./"
+        wine_path: ${{ steps.wine_install.outputs.WINE_PATH }}
+        archive_output: true
+
+    - name: Export debug version
+      id: export-debug
+      uses: firebelley/godot-export@v6.0.0
+      with:
+        export_debug: true
+        godot_executable_download_url: https://github.com/godotengine/godot/releases/download/4.4-stable/Godot_v4.4-stable_linux.x86_64.zip
+        godot_export_templates_download_url: https://github.com/godotengine/godot/releases/download/4.4-stable/Godot_v4.4-stable_export_templates.tpz
+        cache: true
+        relative_export_path: "./dist/debug"
+        relative_project_path: "./"
+        wine_path: ${{ steps.wine_install.outputs.WINE_PATH }}
+        archive_output: true
+    
+    - name: Upload normal build
+      id: normal-build-upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: normal builds
+        path: ${{ github.workspace }}/dist/normal/*
+    - name: Upload debug build
+      id: debug-build-upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: debug builds
+        path: ${{ github.workspace }}/dist/debug/*

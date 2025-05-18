@@ -1,0 +1,55 @@
+name: GDScript Autofix & Lint
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  format-and-fix:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Get the code
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+
+      # 2. Set up Python 3.x
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+          cache: 'pip'
+
+      # 3. Install the GDScript Toolkit (formatter + linter)
+      - name: Install from requirements.txt
+        run: pip install -r requirements.txt
+
+      # 4. Run the formatter in-place (will rewrite files)
+      - name: Auto-format GDScript
+        id: gdformat
+        run: |
+          gdformat .
+
+      # 5. (Optional) Run the linter and fail if there are any errors
+      - name: Lint GDScript
+        id: gdlint
+        run: |
+          gdlint .
+      
+      # 6. Commit & PR the formatting fixes (not sure if we want to keep that)
+      - name: Create Pull Request for formatting fixes
+        if: ${{ steps.gdlint.outcome != cancelled() }}
+        uses: peter-evans/create-pull-request@v7
+        with:
+          base: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          # branch name prefix; the action will append a timestamp/hash
+          branch: gdscript-auto-format
+          # commit message and PR title
+          commit-message: '[autofix] apply GDScript formatting'
+          title: '[autofix] apply GDScript formatting'
+          body: |
+            This PR applies automatic GDScript formatting fixes via godot-gdscript-toolkit.
+          # delete the branch after PR is merged
+          delete-branch: true
